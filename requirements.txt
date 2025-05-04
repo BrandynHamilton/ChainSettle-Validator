@@ -1,0 +1,9 @@
+git+https://github.com/brandynhamilton/chainsettle.git@main#egg=chainsettle
+web3
+pandas
+numpy
+click
+dotenv
+arweave-python-client
+cryptography
+flask

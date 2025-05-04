@@ -1,0 +1,5 @@
+.env
+validator_env/
+keystores
+dockerfile
+last_blocks
