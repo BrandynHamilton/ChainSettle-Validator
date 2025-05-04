@@ -1,114 +1,115 @@
-# ChainSettle CLI
+# ChainSettle Validator Node
 
-ChainSettle is a Web3 oracle system deployed on the Akash network that verifies **off-chain actions** (like wire transfers or GitHub milestones) and **attests them on-chain**, enabling credible trust-minimized settlement for digital goods, DAO payouts, escrow, and more.
-
-ChainSettle es un oráculo Web3 que permite verificar acciones fuera de la cadena (como pagos bancarios o commits en GitHub) y confirmarlas en la blockchain, activando flujos de trabajo descentralizados.
+ChainSettle Validator Nodes listen to on-chain `Attested` events and vote on settlements using a registered validator wallet. These nodes are essential to the decentralized confirmation of verified off-chain actions (like GitHub milestones, fiat payments, or document signings).
 
 ---
 
-## Prerequisites
+## Requirements
 
 - Python 3.8+
-- pip
-- Internet access (to call the ChainSettle API)
+- Web3-compatible wallet (can be generated automatically)
+- Internet access (RPC endpoints and backend API)
+- API key (if registering a new validator)
 
 ---
 
 ## Getting Started
 
-### 1. Clone the Repository
+### 1. Clone this Repository
 
 ```bash
-git clone https://github.com/BrandynHamilton/chainsettle
-cd chainsettle
+git clone https://github.com/YOUR_USERNAME/chainsettle-validator
+cd chainsettle-validator
 ```
 
-### 2. Install Dependencies
+### 2. Set Up Environment
 
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Set up .env
-
-You can copy the sample file included:
+Copy the sample file and modify it:
 
 ```bash
 cp .env.sample .env
 ```
 
-By default, `.env.sample` contains a working `BACKEND_URL` pointing to the live Akash node:
+The following environment variables are required:
 
 ```env
-BACKEND_URL=http://fsoh913eg59c590vufv3qkhod0.ingress.paradigmapolitico.online/
+ALCHEMY_API_KEY=your_key_here
+FAUCET_URL=http://localhost:5000/faucet
+LOCAL_URL=http://localhost:5000
+VALIDATOR_API_KEY=your_registration_key
+VALIDATOR_NODE_KEY=optional_private_key
 ```
 
-Note: `dotenv` does not automatically load `.env.sample`. You must manually rename or copy it to `.env`.
-
----
-
-## Using the CLI
-
-### init-attest: Initialize an attestation and optionally link a bank account
+### 3. Install Dependencies
 
 ```bash
-python cli.py init-attest --type plaid --escrow-id test123 --network ethereum
+pip install -r requirements.txt
 ```
 
-- For `plaid`, it will launch a Plaid Link URL to securely link a bank account.
-- For `github`, it will register the escrow ID without linking anything.
+---
 
-### attest: Submit the attestation
+## Commands
+
+### `listen`
+
+This is the primary command to run a validator node:
 
 ```bash
-# For Plaid:
-python cli.py attest --type plaid --escrow-id test123 --amount 100.0
-
-# For GitHub:
-python cli.py attest --type github --escrow-id test123 \
-  --owner your-org --repo your-repo --tag v1.0.0 --path audit/report.pdf
+python validator.py listen --network ethereum
 ```
 
-Once the action is verified (transaction or GitHub tag/file), ChainSettle posts the attestation onchain and returns a transaction hash and Etherscan URL.
+You can also run across all networks:
+
+```bash
+python validator.py listen --network all
+```
+
+Optional flags:
+- `--new-wallet`: generate and encrypt a new keystore if none exists
+- `--account <address>`: use or unlock a specific keystore by address
 
 ---
 
-## How It Works
+## Behavior Overview
 
-1. You initialize an escrow using `init-attest` and include a unique escrow ID.
-2. You perform the off-chain action (e.g., bank transfer, code push).
-3. You run `attest` with the unique escrow ID to trigger verification and onchain logging.
+1. On startup, the validator:
+   - Loads a keystore from the environment or disk.
+   - If none is found, it prompts to generate one (or uses `--new-wallet`).
+   - Connects to the specified network(s).
+   - Checks if the address is a registered validator.
+   - If not, attempts registration using the provided `VALIDATOR_API_KEY`.
 
-ChainSettle will automatically detect the event (via Plaid or GitHub API), and send a signed onchain transaction to the configured settlement registry.  The Settlement Registry can then be queried with the unique escrow ID.  
+2. If balance is below 0.01 ETH:
+   - Automatically attempts to claim funds from the faucet.
 
-Example commands can be found in notes/cli_notes.txt
-
-### Test Credentials for the Plaid Interface:
-
-- Bank: First Platypus Bank 
-- username: user_good
-- password: pass_good
-
----
-
-## Tech Stack
-
-- Python (Click, dotenv, requests)
-- ChainSettle backend (Flask on Akash)
-- Plaid Sandbox and GitHub API
-- Ethereum smart contract deployed to Sepolia testnet
+3. Once setup is complete:
+   - Listens to `Attested` events on-chain.
+   - Submits a transaction to `voteOnSettlement()` with onchain confirmation.
 
 ---
 
-## Deployments
+## Keystore Directory
 
-- Settlement Registry (Sepolia Ethereum): 0x3B021184e2E1D05A45480b2AA0A8fbD625a058A6
+Encrypted keystores are stored in:
+
+```
+backend/keystores/
+```
+
+This folder is `.gitignore`d by default.
 
 ---
 
-## Next Steps
+## Example Setup
 
-We are working on:
+```bash
+python validator.py listen --network all --new-wallet
+```
 
-- Integration with Yappy (Panama)
-- More attestation types (e.g., document signatures)
+---
+
+## Deployment Notes
+
+- Supports multi-network validation (e.g., Sepolia and BlockDAG)
+- Automatically retries failed RPC connections
+- Compatible with ChainSettle smart contracts deployed to Ethereum and other EVM chains
