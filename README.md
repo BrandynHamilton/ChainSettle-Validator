@@ -93,7 +93,7 @@ Optional flags:
 Encrypted keystores are stored in:
 
 ```
-backend/keystores/
+keystores/
 ```
 
 This folder is `.gitignore`d by default.
