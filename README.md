@@ -58,6 +58,10 @@ This is the primary command to run a validator node:
 python validator.py listen --network ethereum
 ```
 
+```bash
+python validator.py listen --network blockdag
+```
+
 You can also run across all networks:
 
 ```bash
